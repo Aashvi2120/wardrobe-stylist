@@ -27,9 +27,9 @@ function AuthGate() {
 
   useEffect(() => {
     if (!ready) return;
-    const inAuth = segments[0] === "onboarding";
+    const inAuth = segments[0] === "(auth)";
     if (!profile && !inAuth) {
-      router.replace("/onboarding");
+      router.replace("/(auth)/login");
     } else if (profile && inAuth) {
       router.replace("/");
     }
@@ -38,7 +38,7 @@ function AuthGate() {
   return (
     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: "transparent" } }}>
       <Stack.Screen name="(tabs)" />
-      <Stack.Screen name="onboarding" options={{ animation: "fade" }} />
+      <Stack.Screen name="(auth)" options={{ animation: "fade" }} />
       <Stack.Screen
         name="add-item"
         options={{ presentation: "modal", animation: "slide_from_bottom" }}

@@ -24,11 +24,18 @@ import { Header } from "@/components/Header";
 import { ItemCard } from "@/components/ItemCard";
 import { useVeloura } from "@/contexts/VelouraContext";
 import { useColors } from "@/hooks/useColors";
-import { INSPIRATIONS, type Inspiration } from "@/lib/inspirations";
+import {
+  getInspirationsByCategory,
+  getOutfitOfTheDay,
+  INSPIRATIONS,
+  type Inspiration,
+} from "@/lib/inspirations";
 import { generateOutfits } from "@/lib/outfitGenerator";
 import {
   CATEGORY_LABELS,
   COLOR_SWATCHES,
+  INSPIRATION_CATEGORY_LABELS,
+  INSPIRATION_CATEGORY_ORDER,
   OCCASION_LABELS,
   type Category,
   type Occasion,
@@ -287,12 +294,12 @@ function FilterTab({ label, selected, onPress }: { label: string; selected: bool
 
 function InspirationsSection({
   onPress,
-  onSeeAll,
 }: {
   onPress: (i: Inspiration) => void;
   onSeeAll: () => void;
 }) {
   const colors = useColors();
+  const ootd = useMemo(() => getOutfitOfTheDay(), []);
   return (
     <FadeIn>
       <View style={styles.styledWrap}>
@@ -303,47 +310,110 @@ function InspirationsSection({
               Style Inspirations <Text style={{ color: colors.accent }}>✨</Text>
             </Text>
             <Text style={[styles.styledSub, { color: colors.mutedForeground }]}>
-              Five looks Veloura is loving right now — no wardrobe needed.
+              Twenty curated looks across six moods — no wardrobe needed.
             </Text>
           </View>
         </View>
-        <View style={styles.seeAllRow}>
-          <Pressable
-            onPress={onSeeAll}
-            style={({ pressed }) => [
-              styles.seeAllBtn,
-              { borderColor: colors.accent, backgroundColor: colors.card, opacity: pressed ? 0.8 : 1 },
-            ]}
-          >
-            <Text style={[styles.seeAllText, { color: colors.foreground }]}>Browse all</Text>
-            <Feather name="arrow-right" size={14} color={colors.accent} />
-          </Pressable>
-        </View>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.styledRow}
-          decelerationRate="fast"
-          snapToInterval={258}
-        >
-          {INSPIRATIONS.map((inspo, i) => (
-            <FadeIn key={inspo.id} delay={140 + i * 90}>
-              <InspirationCard inspo={inspo} onPress={() => onPress(inspo)} />
-            </FadeIn>
-          ))}
-        </ScrollView>
+
+        <OutfitOfTheDayCard inspo={ootd} onPress={() => onPress(ootd)} />
+
+        {INSPIRATION_CATEGORY_ORDER.map((cat) => {
+          const items = getInspirationsByCategory(cat);
+          if (items.length === 0) return null;
+          return (
+            <View key={cat} style={styles.categoryBlock}>
+              <View style={styles.categoryHeader}>
+                <Text style={[styles.categoryTitle, { color: colors.foreground }]}>
+                  {INSPIRATION_CATEGORY_LABELS[cat]}
+                </Text>
+                <Text style={[styles.categoryCount, { color: colors.mutedForeground }]}>
+                  {items.length} looks
+                </Text>
+              </View>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.styledRow}
+                decelerationRate="fast"
+                snapToInterval={234}
+              >
+                {items.map((inspo, i) => (
+                  <FadeIn key={inspo.id} delay={80 + i * 60}>
+                    <InspirationCard inspo={inspo} onPress={() => onPress(inspo)} />
+                  </FadeIn>
+                ))}
+              </ScrollView>
+            </View>
+          );
+        })}
       </View>
     </FadeIn>
   );
 }
 
+function OutfitOfTheDayCard({ inspo, onPress }: { inspo: Inspiration; onPress: () => void }) {
+  const colors = useColors();
+  const scale = useRef(new Animated.Value(1)).current;
+  const onPressIn = () =>
+    Animated.spring(scale, { toValue: 0.985, friction: 6, tension: 140, useNativeDriver: true }).start();
+  const onPressOut = () =>
+    Animated.spring(scale, { toValue: 1, friction: 5, tension: 140, useNativeDriver: true }).start();
+
+  return (
+    <Animated.View style={[styles.ootdWrap, { transform: [{ scale }] }]}>
+      <Pressable
+        onPress={onPress}
+        onPressIn={onPressIn}
+        onPressOut={onPressOut}
+        style={[styles.ootdCard, { borderColor: colors.accent, shadowColor: colors.accent }]}
+      >
+        <Image source={inspo.image} style={StyleSheet.absoluteFill} contentFit="cover" />
+        <LinearGradient
+          colors={["rgba(15,14,13,0.05)", "rgba(15,14,13,0.55)", "rgba(15,14,13,0.92)"]}
+          locations={[0, 0.45, 1]}
+          style={StyleSheet.absoluteFill}
+        />
+        <View style={[styles.ootdBadge, { backgroundColor: colors.accent }]}>
+          <Feather name="star" size={11} color={colors.accentForeground} />
+          <Text style={[styles.ootdBadgeText, { color: colors.accentForeground }]}>
+            OUTFIT OF THE DAY
+          </Text>
+        </View>
+        <View style={styles.ootdFoot}>
+          <Text style={styles.ootdEyebrow}>
+            {INSPIRATION_CATEGORY_LABELS[inspo.category].toUpperCase()} · {inspo.occasion.toUpperCase()}
+          </Text>
+          <Text style={styles.ootdTitle}>
+            {inspo.title} <Text style={{ color: colors.accent }}>✨</Text>
+          </Text>
+          <Text style={styles.ootdCaption} numberOfLines={2}>
+            {inspo.caption}
+          </Text>
+          <View style={styles.ootdCta}>
+            <Text style={[styles.ootdCtaText, { color: "#fff" }]}>See the breakdown</Text>
+            <Feather name="arrow-right" size={14} color={colors.accent} />
+          </View>
+        </View>
+      </Pressable>
+    </Animated.View>
+  );
+}
+
 function InspirationCard({ inspo, onPress }: { inspo: Inspiration; onPress: () => void }) {
   const colors = useColors();
+  const { isInspirationSaved, toggleSavedInspiration } = useVeloura();
+  const saved = isInspirationSaved(inspo.id);
+
   const scale = useRef(new Animated.Value(1)).current;
   const onPressIn = () =>
     Animated.spring(scale, { toValue: 0.965, friction: 6, tension: 140, useNativeDriver: true }).start();
   const onPressOut = () =>
     Animated.spring(scale, { toValue: 1, friction: 5, tension: 140, useNativeDriver: true }).start();
+
+  const onSteal = () => {
+    if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    toggleSavedInspiration(inspo.id);
+  };
 
   return (
     <Animated.View style={{ transform: [{ scale }] }}>
@@ -357,17 +427,17 @@ function InspirationCard({ inspo, onPress }: { inspo: Inspiration; onPress: () =
         ]}
       >
         <View style={styles.inspoImageWrap}>
-          <Image source={inspo.hero} style={StyleSheet.absoluteFill} contentFit="cover" />
+          <Image source={inspo.image} style={StyleSheet.absoluteFill} contentFit="cover" />
           <LinearGradient
             colors={["transparent", "rgba(15,14,13,0.75)"]}
             style={styles.inspoGradient}
           />
           <View style={styles.lookBadge}>
             <Feather name="star" size={10} color={colors.accent} />
-            <Text style={[styles.lookBadgeText, { color: "#fff" }]}>{OCCASION_LABELS[inspo.occasion]}</Text>
+            <Text style={[styles.lookBadgeText, { color: "#fff" }]}>{inspo.occasion}</Text>
           </View>
           <View style={styles.inspoFoot}>
-            <Text style={styles.inspoName}>{inspo.name}</Text>
+            <Text style={styles.inspoName}>{inspo.title}</Text>
             <Text style={styles.inspoCaption} numberOfLines={1}>
               {inspo.caption}
             </Text>
@@ -377,21 +447,42 @@ function InspirationCard({ inspo, onPress }: { inspo: Inspiration; onPress: () =
           <View style={{ flex: 1, gap: 6 }}>
             {inspo.pieces.slice(0, 3).map((p, i) => (
               <View key={i} style={styles.inspoPieceRow}>
-                <View style={[styles.inspoPieceDot, { backgroundColor: p.color, borderColor: colors.border }]} />
+                <View style={[styles.inspoPieceDot, { backgroundColor: inspo.palette[i % inspo.palette.length], borderColor: colors.border }]} />
                 <Text style={[styles.inspoPieceLabel, { color: colors.mutedForeground }]} numberOfLines={1}>
                   <Text style={{ color: colors.foreground, fontFamily: "Inter_600SemiBold" }}>
-                    {CATEGORY_LABELS[p.category]}
+                    {p.category}
                   </Text>
                   {"  ·  "}
-                  {p.name}
+                  {p.description}
                 </Text>
               </View>
             ))}
           </View>
-          <View style={[styles.lookArrow, { backgroundColor: colors.accent }]}>
-            <Feather name="arrow-up-right" size={12} color={colors.accentForeground} />
-          </View>
         </View>
+        <Pressable
+          onPress={onSteal}
+          style={({ pressed }) => [
+            styles.stealBtn,
+            saved
+              ? { backgroundColor: colors.accent, borderColor: colors.accent }
+              : { backgroundColor: colors.background, borderColor: colors.border },
+            { opacity: pressed ? 0.85 : 1 },
+          ]}
+        >
+          <Feather
+            name={saved ? "check" : "bookmark"}
+            size={13}
+            color={saved ? colors.accentForeground : colors.foreground}
+          />
+          <Text
+            style={[
+              styles.stealText,
+              { color: saved ? colors.accentForeground : colors.foreground },
+            ]}
+          >
+            {saved ? "Saved" : "Steal this look 💅"}
+          </Text>
+        </Pressable>
       </Pressable>
     </Animated.View>
   );
@@ -735,9 +826,122 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
   },
 
+  // Outfit of the Day
+  ootdWrap: {
+    paddingHorizontal: 22,
+    paddingTop: 4,
+    paddingBottom: 6,
+  },
+  ootdCard: {
+    width: "100%",
+    height: 380,
+    borderRadius: 26,
+    borderWidth: 1.5,
+    overflow: "hidden",
+    shadowOpacity: 0.32,
+    shadowRadius: 22,
+    shadowOffset: { width: 0, height: 12 },
+    elevation: 12,
+  },
+  ootdBadge: {
+    position: "absolute",
+    top: 16,
+    left: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 999,
+  },
+  ootdBadgeText: {
+    fontFamily: "Inter_700Bold",
+    fontSize: 10,
+    letterSpacing: 1.6,
+  },
+  ootdFoot: {
+    position: "absolute",
+    left: 22,
+    right: 22,
+    bottom: 22,
+  },
+  ootdEyebrow: {
+    fontFamily: "Inter_600SemiBold",
+    fontSize: 10,
+    letterSpacing: 2,
+    color: "rgba(255,255,255,0.85)",
+  },
+  ootdTitle: {
+    fontFamily: "Inter_700Bold",
+    fontSize: 30,
+    letterSpacing: -0.8,
+    color: "#fff",
+    marginTop: 6,
+    lineHeight: 34,
+  },
+  ootdCaption: {
+    fontFamily: "Inter_400Regular",
+    fontSize: 13,
+    color: "rgba(255,255,255,0.85)",
+    marginTop: 8,
+    lineHeight: 19,
+  },
+  ootdCta: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginTop: 14,
+  },
+  ootdCtaText: {
+    fontFamily: "Inter_600SemiBold",
+    fontSize: 13,
+    letterSpacing: 0.4,
+  },
+
+  // Category rows
+  categoryBlock: {
+    marginTop: 18,
+  },
+  categoryHeader: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    justifyContent: "space-between",
+    paddingHorizontal: 22,
+    marginBottom: 8,
+  },
+  categoryTitle: {
+    fontFamily: "Inter_700Bold",
+    fontSize: 18,
+    letterSpacing: -0.4,
+  },
+  categoryCount: {
+    fontFamily: "Inter_500Medium",
+    fontSize: 11,
+    letterSpacing: 1.2,
+    textTransform: "uppercase",
+  },
+
+  // Steal-this-look CTA on inspiration card
+  stealBtn: {
+    marginHorizontal: 14,
+    marginBottom: 14,
+    height: 38,
+    borderRadius: 999,
+    borderWidth: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+  stealText: {
+    fontFamily: "Inter_600SemiBold",
+    fontSize: 12,
+    letterSpacing: 0.3,
+  },
+
   // Inspiration card
   inspoCard: {
-    width: 244,
+    width: 220,
     borderRadius: 22,
     borderWidth: 1,
     overflow: "hidden",
@@ -748,7 +952,7 @@ const styles = StyleSheet.create({
   },
   inspoImageWrap: {
     width: "100%",
-    height: 300,
+    height: 280,
     position: "relative",
   },
   inspoGradient: {

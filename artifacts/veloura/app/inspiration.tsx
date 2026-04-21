@@ -9,24 +9,26 @@ import {
   Easing,
   Platform,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { useVeloura } from "@/contexts/VelouraContext";
 import { useColors } from "@/hooks/useColors";
-import { INSPIRATIONS } from "@/lib/inspirations";
-import { CATEGORY_LABELS, OCCASION_LABELS } from "@/lib/types";
+import { getInspiration, INSPIRATIONS } from "@/lib/inspirations";
+import { INSPIRATION_CATEGORY_LABELS } from "@/lib/types";
 
 export default function InspirationScreen() {
   const colors = useColors();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id?: string }>();
+  const { isInspirationSaved, toggleSavedInspiration } = useVeloura();
 
-  const inspo = INSPIRATIONS.find((i) => i.id === id) ?? INSPIRATIONS[0]!;
+  const inspo = getInspiration(id ?? "") ?? INSPIRATIONS[0]!;
+  const saved = isInspirationSaved(inspo.id);
   const topPad = Platform.OS === "web" ? 67 : insets.top + 4;
 
   const fade = useRef(new Animated.Value(0)).current;
@@ -38,10 +40,13 @@ export default function InspirationScreen() {
     ]).start();
   }, [fade, slide]);
 
-  const recreate = () => {
-    if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    router.back();
-    setTimeout(() => router.push("/add-item"), 280);
+  const onSteal = () => {
+    if (Platform.OS !== "web") {
+      Haptics.notificationAsync(
+        saved ? Haptics.NotificationFeedbackType.Warning : Haptics.NotificationFeedbackType.Success,
+      );
+    }
+    toggleSavedInspiration(inspo.id);
   };
 
   return (
@@ -52,7 +57,9 @@ export default function InspirationScreen() {
         </Pressable>
         <View style={{ alignItems: "center" }}>
           <Text style={[styles.eyebrow, { color: colors.accent }]}>STYLE INSPIRATION</Text>
-          <Text style={[styles.topTitle, { color: colors.foreground }]}>{inspo.name}</Text>
+          <Text style={[styles.topTitle, { color: colors.foreground }]} numberOfLines={1}>
+            {inspo.title}
+          </Text>
         </View>
         <View style={{ width: 24 }} />
       </View>
@@ -64,19 +71,21 @@ export default function InspirationScreen() {
       >
         <View style={styles.heroWrap}>
           <View style={[styles.hero, { borderColor: colors.border, shadowColor: "#1C1A18" }]}>
-            <Image source={inspo.hero} style={StyleSheet.absoluteFill} contentFit="cover" />
+            <Image source={inspo.image} style={StyleSheet.absoluteFill} contentFit="cover" />
             <LinearGradient colors={["transparent", "rgba(15,14,13,0.7)"]} style={styles.heroGradient} />
             <View style={styles.heroBadgeRow}>
               <View style={[styles.heroBadge, { backgroundColor: "rgba(255,255,255,0.94)" }]}>
                 <Feather name="star" size={11} color={colors.accent} />
-                <Text style={styles.heroBadgeText}>Match {inspo.matchScore}</Text>
+                <Text style={styles.heroBadgeText}>
+                  {INSPIRATION_CATEGORY_LABELS[inspo.category]}
+                </Text>
               </View>
               <View style={[styles.heroBadge, { backgroundColor: "rgba(15,14,13,0.55)" }]}>
-                <Text style={[styles.heroBadgeText, { color: "#fff" }]}>{OCCASION_LABELS[inspo.occasion]}</Text>
+                <Text style={[styles.heroBadgeText, { color: "#fff" }]}>{inspo.occasion}</Text>
               </View>
             </View>
             <View style={styles.heroFoot}>
-              <Text style={styles.heroName}>{inspo.name}</Text>
+              <Text style={styles.heroName}>{inspo.title}</Text>
               <Text style={styles.heroCaption}>{inspo.caption}</Text>
             </View>
           </View>
@@ -100,12 +109,20 @@ export default function InspirationScreen() {
           <View style={{ gap: 10, marginTop: 14 }}>
             {inspo.pieces.map((p, idx) => (
               <View key={idx} style={[styles.pieceRow, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                <View style={[styles.pieceColor, { backgroundColor: p.color, borderColor: colors.border }]} />
+                <View
+                  style={[
+                    styles.pieceColor,
+                    {
+                      backgroundColor: inspo.palette[idx % inspo.palette.length],
+                      borderColor: colors.border,
+                    },
+                  ]}
+                />
                 <View style={{ flex: 1, gap: 2 }}>
                   <Text style={[styles.pieceCategory, { color: colors.mutedForeground }]}>
-                    {CATEGORY_LABELS[p.category].toUpperCase()}
+                    {p.category.toUpperCase()}
                   </Text>
-                  <Text style={[styles.pieceName, { color: colors.foreground }]}>{p.name}</Text>
+                  <Text style={[styles.pieceName, { color: colors.foreground }]}>{p.description}</Text>
                 </View>
                 <Feather name="bookmark" size={16} color={colors.mutedForeground} />
               </View>
@@ -123,7 +140,7 @@ export default function InspirationScreen() {
           <View style={[styles.tipCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <View style={styles.tipRow}>
               <View style={[styles.tipDot, { backgroundColor: colors.accent }]} />
-              <Text style={[styles.tipText, { color: colors.foreground }]}>{inspo.tip}</Text>
+              <Text style={[styles.tipText, { color: colors.foreground }]}>{inspo.caption}</Text>
             </View>
           </View>
         </View>
@@ -142,23 +159,25 @@ export default function InspirationScreen() {
             { backgroundColor: colors.card, borderColor: colors.border, transform: [{ scale: pressed ? 0.97 : 1 }] },
           ]}
         >
-          <Feather name="bookmark" size={16} color={colors.foreground} />
-          <Text style={[styles.saveText, { color: colors.foreground }]}>Save</Text>
+          <Feather name="x" size={16} color={colors.foreground} />
+          <Text style={[styles.saveText, { color: colors.foreground }]}>Close</Text>
         </Pressable>
         <Pressable
-          onPress={recreate}
+          onPress={onSteal}
           style={({ pressed }) => [styles.wearBtn, { transform: [{ scale: pressed ? 0.97 : 1 }] }]}
         >
           <LinearGradient
-            colors={[colors.primary, "#2C2723"]}
+            colors={saved ? ["#3F5D3A", "#2C4128"] : [colors.primary, "#2C2723"]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={[styles.wearBtnInner, { borderColor: colors.accent, shadowColor: colors.accent }]}
           >
             <View style={[styles.wearIconWrap, { backgroundColor: colors.accent }]}>
-              <Feather name="camera" size={14} color={colors.accentForeground} />
+              <Feather name={saved ? "check" : "heart"} size={14} color={colors.accentForeground} />
             </View>
-            <Text style={[styles.wearText, { color: colors.primaryForeground }]}>Recreate in my wardrobe</Text>
+            <Text style={[styles.wearText, { color: colors.primaryForeground }]}>
+              {saved ? "Saved to your looks" : "Steal this look 💅"}
+            </Text>
           </LinearGradient>
         </Pressable>
       </View>

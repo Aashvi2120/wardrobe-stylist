@@ -1,0 +1,191 @@
+Act as a senior React Native (Expo) developer.
+
+I already have a working web app for my project "Veloura" (built with React/Next.js).
+
+Your task is to:
+
+1. Convert this existing web app into a MOBILE APP using React Native (Expo)
+2. Reuse the same UI design, structure, and logic as much as possible
+3. Add new features: Authentication + Advanced Style Inspirations
+
+IMPORTANT:
+Do NOT rebuild from scratch — convert and adapt existing components.
+
+---
+
+# 📱 PART 1: CONVERT TO MOBILE APP
+
+* Convert web components into React Native components
+* Replace:
+
+  * div → View
+  * img → Image
+  * button → Pressable / TouchableOpacity
+* Use StyleSheet instead of CSS/Tailwind
+* Ensure mobile responsiveness
+
+---
+
+# 🔐 PART 2: ADD AUTHENTICATION
+
+Create:
+
+### Screens:
+
+* Login Screen
+* Signup Screen
+
+### Features:
+
+* Name (signup)
+* Email
+* Password
+
+### Logic:
+
+* Use AsyncStorage to store users
+* Validate login credentials
+* Show error messages
+
+### Session:
+
+* Keep user logged in
+* Auto-login if session exists
+
+### Logout:
+
+* Button in Profile screen
+
+---
+
+# ✨ PART 3: ADD ADVANCED STYLE INSPIRATIONS
+
+Upgrade existing outfit section:
+
+## Add new section at TOP:
+
+"Style Inspirations ✨"
+
+### Categories:
+
+* Daily Wear
+* Office Looks
+* Date Night
+* Party Glam
+* Travel Fits
+* Minimal Aesthetic
+
+---
+
+### Each category:
+
+* Horizontal scroll
+* 5–10 outfit cards
+
+---
+
+### Outfit Card must include:
+
+* Title (e.g., "Chic Brunch Look")
+* Top, bottom, shoes
+* Occasion tag
+* Styling caption
+* Button: "Steal this look 💅"
+
+---
+
+### Data:
+
+* Use predefined JSON (at least 20+ outfits)
+* Do NOT depend on user wardrobe
+
+---
+
+### Add:
+
+"Outfit of the Day ✨"
+
+* Highlight one featured outfit
+
+---
+
+# 💾 PART 4: SAVE FEATURE
+
+* User can save outfits
+* Store using AsyncStorage
+* Create "Saved Looks" section
+
+---
+
+# 🧭 PART 5: NAVIGATION
+
+Use React Navigation:
+
+* If NOT logged in:
+  → Show Login/Signup
+
+* If logged in:
+  → Show Main App
+
+Tabs:
+
+* Home
+* Wardrobe
+* Profile
+
+---
+
+# 🎨 PART 6: UI STYLE
+
+* Keep existing luxury design
+* Dark theme (black)
+* Beige/gold accents
+* Rounded cards
+* Minimal aesthetic
+
+---
+
+# ⚙️ PART 7: INTERACTIONS
+
+* Card press animation (scale)
+* Smooth scrolling
+* Fade-in effects
+
+---
+
+# 📁 PART 8: PROJECT STRUCTURE
+
+Create clean structure:
+
+* components/
+* screens/
+* navigation/
+* data/
+* utils/
+
+---
+
+# ⚠️ IMPORTANT RULES
+
+* DO NOT explain only — GIVE CODE
+* Convert existing logic instead of rewriting
+* Keep beginner-friendly
+* Ensure it runs in Expo
+
+---
+
+# 🎯 FINAL GOAL
+
+After running:
+
+* App opens in Expo
+* User can sign up / login
+* See style inspirations
+* Save outfits
+* Navigate smoothly
+
+Start with:
+
+1. Expo setup
+2. Converting existing Home screen
+3. Then add authentication

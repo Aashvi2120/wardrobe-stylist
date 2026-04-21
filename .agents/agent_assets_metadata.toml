@@ -48,3 +48,63 @@ id = "jAG6XOU6LPCneHyzyxixh"
 uri = "file://artifacts/veloura/assets/images/insp-garden.png"
 type = "image"
 title = "Garden Party"
+
+[[generated]]
+id = "6TWj3UpDK8y8N1Had0Mrl"
+uri = "file://artifacts/veloura/assets/images/insp-sunday.png"
+type = "image"
+title = "Sunday Errands"
+
+[[generated]]
+id = "6SGvlSGY8-xBN6FBvopIq"
+uri = "file://artifacts/veloura/assets/images/insp-coffee.png"
+type = "image"
+title = "Coffee Run"
+
+[[generated]]
+id = "AuUakrIThGqvU5QdApj4q"
+uri = "file://artifacts/veloura/assets/images/insp-park.png"
+type = "image"
+title = "Park Stroll"
+
+[[generated]]
+id = "2AMbK8xB3aDo2laAcoKer"
+uri = "file://artifacts/veloura/assets/images/insp-creative.png"
+type = "image"
+title = "Creative Director"
+
+[[generated]]
+id = "k_0AeDS9V0pHaYNDXFrDc"
+uri = "file://artifacts/veloura/assets/images/insp-lunch.png"
+type = "image"
+title = "Client Lunch"
+
+[[generated]]
+id = "2WEjNMJcq1APIRQZ1x8M-"
+uri = "file://artifacts/veloura/assets/images/insp-drinks.png"
+type = "image"
+title = "Desk to Drinks"
+
+[[generated]]
+id = "3ujsFs8Qs2VtUaiHgzyFh"
+uri = "file://artifacts/veloura/assets/images/insp-wine.png"
+type = "image"
+title = "Wine Bar"
+
+[[generated]]
+id = "GXtZP8OEVT8KgCPmLYt2y"
+uri = "file://artifacts/veloura/assets/images/insp-rooftop.png"
+type = "image"
+title = "Rooftop Dinner"
+
+[[generated]]
+id = "YDO6PLmS50le86ICpKxlj"
+uri = "file://artifacts/veloura/assets/images/insp-cocktail.png"
+type = "image"
+title = "Cocktail Hour"
+
+[[generated]]
+id = "M6JVVw6TgfSW0rzAJG7vW"
+uri = "file://artifacts/veloura/assets/images/insp-velvet.png"
+type = "image"
+title = "Velvet Soirée"

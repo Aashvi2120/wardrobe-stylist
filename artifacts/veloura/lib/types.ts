@@ -43,11 +43,38 @@ export type StylePreference = "minimalist" | "classic" | "bohemian" | "streetwea
 
 export interface UserProfile {
   name: string;
+  email?: string;
   bodyType?: BodyType;
   skinTone?: SkinTone;
   style?: StylePreference;
   createdAt: number;
 }
+
+export type InspirationCategory =
+  | "daily"
+  | "office"
+  | "date"
+  | "party"
+  | "travel"
+  | "minimal";
+
+export const INSPIRATION_CATEGORY_LABELS: Record<InspirationCategory, string> = {
+  daily: "Daily Wear",
+  office: "Office Looks",
+  date: "Date Night",
+  party: "Party Glam",
+  travel: "Travel Fits",
+  minimal: "Minimal Aesthetic",
+};
+
+export const INSPIRATION_CATEGORY_ORDER: InspirationCategory[] = [
+  "daily",
+  "office",
+  "date",
+  "party",
+  "travel",
+  "minimal",
+];
 
 export const CATEGORY_LABELS: Record<Category, string> = {
   top: "Top",
