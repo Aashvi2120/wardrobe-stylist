@@ -31,7 +31,6 @@ import {
   OCCASION_LABELS,
   type Category,
   type Occasion,
-  type Outfit,
   type WardrobeItem,
 } from "@/lib/types";
 
@@ -59,6 +58,8 @@ interface StyledLook {
   id: string;
   caption: string;
   occasion: Occasion;
+  score?: number;
+  itemIds?: string[];
   items?: WardrobeItem[];
   placeholder?: { tone: string; accent: string };
 }
@@ -110,6 +111,8 @@ export default function WardrobeScreen() {
           id: first.id,
           caption: CAPTIONS[occ],
           occasion: occ,
+          score: first.score,
+          itemIds: first.itemIds,
           items: its,
         });
         if (real.length === 3) break;
@@ -133,9 +136,26 @@ export default function WardrobeScreen() {
     ]);
   };
 
+  const openLook = (look: StyledLook) => {
+    if (!look.items || !look.itemIds) {
+      router.push("/generate");
+      return;
+    }
+    if (Platform.OS !== "web") Haptics.selectionAsync();
+    router.push({
+      pathname: "/outfit-preview",
+      params: {
+        ids: look.itemIds.join(","),
+        occasion: look.occasion,
+        caption: look.caption,
+        score: String(look.score ?? 0),
+      },
+    });
+  };
+
   const headerComponent = (
     <View>
-      <StyledForYouSection looks={styledLooks} onPressLook={() => router.push("/generate")} />
+      <StyledForYouSection looks={styledLooks} onPressLook={openLook} onSeeAll={() => router.push("/generate")} />
       <View style={styles.filterHeader}>
         <Text style={[styles.sectionEyebrow, { color: colors.accent }]}>YOUR ATELIER</Text>
         <Text style={[styles.sectionCount, { color: colors.mutedForeground }]}>
@@ -178,7 +198,7 @@ export default function WardrobeScreen() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: tabBarPad + 20 }}
         >
-          <StyledForYouSection looks={styledLooks} onPressLook={() => router.push("/generate")} />
+          <StyledForYouSection looks={styledLooks} onPressLook={openLook} onSeeAll={() => router.push("/generate")} />
           <PremiumEmptyState onCta={() => router.push("/add-item")} />
         </ScrollView>
       ) : filtered.length === 0 ? (
@@ -228,8 +248,8 @@ function FadeIn({ children, delay = 0 }: { children: React.ReactNode; delay?: nu
   const translateY = useRef(new Animated.Value(14)).current;
   useEffect(() => {
     Animated.parallel([
-      Animated.timing(opacity, { toValue: 1, duration: 420, delay, easing: Easing.out(Easing.quad), useNativeDriver: true }),
-      Animated.timing(translateY, { toValue: 0, duration: 420, delay, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+      Animated.timing(opacity, { toValue: 1, duration: 460, delay, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+      Animated.timing(translateY, { toValue: 0, duration: 460, delay, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
     ]).start();
   }, [opacity, translateY, delay]);
   return <Animated.View style={{ opacity, transform: [{ translateY }] }}>{children}</Animated.View>;
@@ -266,7 +286,15 @@ function FilterTab({ label, selected, onPress }: { label: string; selected: bool
   );
 }
 
-function StyledForYouSection({ looks, onPressLook }: { looks: StyledLook[]; onPressLook: () => void }) {
+function StyledForYouSection({
+  looks,
+  onPressLook,
+  onSeeAll,
+}: {
+  looks: StyledLook[];
+  onPressLook: (look: StyledLook) => void;
+  onSeeAll: () => void;
+}) {
   const colors = useColors();
   return (
     <FadeIn>
@@ -277,9 +305,21 @@ function StyledForYouSection({ looks, onPressLook }: { looks: StyledLook[]; onPr
             <Text style={[styles.styledTitle, { color: colors.foreground }]}>
               AI Styled For You <Text style={{ color: colors.accent }}>✨</Text>
             </Text>
+            <Text style={[styles.styledSub, { color: colors.mutedForeground }]}>
+              Veloura styled these looks for you today <Text style={{ color: colors.accent }}>✨</Text>
+            </Text>
           </View>
-          <Pressable onPress={onPressLook} hitSlop={10}>
-            <Text style={[styles.styledLink, { color: colors.foreground }]}>See all</Text>
+        </View>
+        <View style={styles.seeAllRow}>
+          <Pressable
+            onPress={onSeeAll}
+            style={({ pressed }) => [
+              styles.seeAllBtn,
+              { borderColor: colors.accent, backgroundColor: colors.card, opacity: pressed ? 0.8 : 1 },
+            ]}
+          >
+            <Text style={[styles.seeAllText, { color: colors.foreground }]}>See all looks</Text>
+            <Feather name="arrow-right" size={14} color={colors.accent} />
           </Pressable>
         </View>
         <ScrollView
@@ -287,11 +327,11 @@ function StyledForYouSection({ looks, onPressLook }: { looks: StyledLook[]; onPr
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.styledRow}
           decelerationRate="fast"
-          snapToInterval={236}
+          snapToInterval={244}
         >
           {looks.map((look, i) => (
-            <FadeIn key={look.id} delay={120 + i * 90}>
-              <StyledLookCard look={look} onPress={onPressLook} />
+            <FadeIn key={look.id} delay={140 + i * 110}>
+              <StyledLookCard look={look} onPress={() => onPressLook(look)} />
             </FadeIn>
           ))}
         </ScrollView>
@@ -302,79 +342,114 @@ function StyledForYouSection({ looks, onPressLook }: { looks: StyledLook[]; onPr
 
 function StyledLookCard({ look, onPress }: { look: StyledLook; onPress: () => void }) {
   const colors = useColors();
+  const scale = useRef(new Animated.Value(1)).current;
+
+  const onPressIn = () =>
+    Animated.spring(scale, { toValue: 0.965, friction: 6, tension: 140, useNativeDriver: true }).start();
+  const onPressOut = () =>
+    Animated.spring(scale, { toValue: 1, friction: 5, tension: 140, useNativeDriver: true }).start();
+
+  // Map items by category for explicit top/bottom/shoes layout.
+  const byCat = useMemo(() => {
+    const m = new Map<Category, WardrobeItem>();
+    look.items?.forEach((it) => {
+      if (!m.has(it.category)) m.set(it.category, it);
+    });
+    return m;
+  }, [look.items]);
+
+  const dress = byCat.get("dress");
+  const top = byCat.get("top");
+  const bottom = byCat.get("bottom");
+  const outer = byCat.get("outerwear");
+  const shoes = byCat.get("shoes");
+
+  const left = dress ?? outer ?? top;
+  const rightTop = dress ? shoes : top && left !== top ? top : bottom;
+  const rightBottom = dress ? null : bottom && left !== bottom ? bottom : shoes;
 
   return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => [
-        styles.lookCard,
-        {
-          backgroundColor: colors.card,
-          borderColor: colors.border,
-          transform: [{ scale: pressed ? 0.98 : 1 }],
-        },
-      ]}
-    >
-      <View style={styles.lookImageWrap}>
-        {look.items ? (
-          <View style={styles.lookCollage}>
-            <View style={[styles.lookMain, { backgroundColor: colors.muted }]}>
-              <Image source={{ uri: look.items[0]!.imageUri }} style={styles.lookImg} contentFit="cover" />
-            </View>
-            <View style={styles.lookSide}>
-              {look.items.slice(1, 3).map((it) => (
-                <View key={it.id} style={[styles.lookSideCell, { backgroundColor: colors.muted }]}>
-                  <Image source={{ uri: it.imageUri }} style={styles.lookImg} contentFit="cover" />
-                </View>
-              ))}
-              {look.items.length < 3
-                ? Array.from({ length: 2 - (look.items.length - 1) }).map((_, idx) => (
-                    <View
-                      key={`pad-${idx}`}
-                      style={[styles.lookSideCell, { backgroundColor: colors.secondary, alignItems: "center", justifyContent: "center" }]}
-                    >
-                      <Feather name="plus" size={14} color={colors.mutedForeground} />
-                    </View>
-                  ))
-                : null}
-            </View>
-          </View>
-        ) : (
-          <PlaceholderCollage tone={look.placeholder!.tone} accent={look.placeholder!.accent} />
-        )}
-        <LinearGradient colors={["transparent", "rgba(15,14,13,0.55)"]} style={styles.lookGradient} />
-        <View style={styles.lookBadge}>
-          <Feather name="star" size={10} color={colors.accent} />
-          <Text style={[styles.lookBadgeText, { color: "#fff" }]}>{OCCASION_LABELS[look.occasion]}</Text>
-        </View>
-      </View>
-      <View style={styles.lookMeta}>
-        <Text style={[styles.lookCaption, { color: colors.foreground }]} numberOfLines={2}>
-          {look.caption}
-        </Text>
-        <View style={styles.lookFooter}>
+    <Animated.View style={{ transform: [{ scale }] }}>
+      <Pressable
+        onPress={onPress}
+        onPressIn={onPressIn}
+        onPressOut={onPressOut}
+        style={[
+          styles.lookCard,
+          {
+            backgroundColor: colors.card,
+            borderColor: colors.border,
+            shadowColor: "#1C1A18",
+          },
+        ]}
+      >
+        <View style={styles.lookImageWrap}>
           {look.items ? (
-            <View style={styles.lookSwatchRow}>
-              {look.items.slice(0, 4).map((it) => (
-                <View
-                  key={it.id}
-                  style={[styles.lookSwatch, { backgroundColor: COLOR_SWATCHES[it.color], borderColor: colors.card }]}
-                />
-              ))}
+            <View style={styles.lookCollage}>
+              {left ? (
+                <View style={[styles.lookMain, { backgroundColor: colors.muted }]}>
+                  <Image source={{ uri: left.imageUri }} style={styles.lookImg} contentFit="cover" />
+                  <View style={[styles.thumbLabel, { backgroundColor: "rgba(15,14,13,0.55)" }]}>
+                    <Text style={styles.thumbLabelText}>{CATEGORY_LABELS[left.category].toUpperCase()}</Text>
+                  </View>
+                </View>
+              ) : null}
+              <View style={styles.lookSide}>
+                {rightTop ? (
+                  <View style={[styles.lookSideCell, { backgroundColor: colors.muted }]}>
+                    <Image source={{ uri: rightTop.imageUri }} style={styles.lookImg} contentFit="cover" />
+                    <View style={[styles.thumbLabelSmall, { backgroundColor: "rgba(15,14,13,0.55)" }]}>
+                      <Text style={styles.thumbLabelText}>{CATEGORY_LABELS[rightTop.category].toUpperCase()}</Text>
+                    </View>
+                  </View>
+                ) : null}
+                {rightBottom ? (
+                  <View style={[styles.lookSideCell, { backgroundColor: colors.muted }]}>
+                    <Image source={{ uri: rightBottom.imageUri }} style={styles.lookImg} contentFit="cover" />
+                    <View style={[styles.thumbLabelSmall, { backgroundColor: "rgba(15,14,13,0.55)" }]}>
+                      <Text style={styles.thumbLabelText}>{CATEGORY_LABELS[rightBottom.category].toUpperCase()}</Text>
+                    </View>
+                  </View>
+                ) : null}
+              </View>
             </View>
           ) : (
-            <View style={styles.lookSwatchRow}>
-              {[look.placeholder!.tone, look.placeholder!.accent, "#1C1A18"].map((c, i) => (
-                <View key={i} style={[styles.lookSwatch, { backgroundColor: c, borderColor: colors.card }]} />
-              ))}
-            </View>
+            <PlaceholderCollage tone={look.placeholder!.tone} accent={look.placeholder!.accent} />
           )}
-          <View style={[styles.lookArrow, { backgroundColor: colors.accent }]}>
-            <Feather name="arrow-up-right" size={12} color={colors.accentForeground} />
+          <LinearGradient colors={["transparent", "rgba(15,14,13,0.55)"]} style={styles.lookGradient} />
+          <View style={styles.lookBadge}>
+            <Feather name="star" size={10} color={colors.accent} />
+            <Text style={[styles.lookBadgeText, { color: "#fff" }]}>{OCCASION_LABELS[look.occasion]}</Text>
           </View>
         </View>
-      </View>
-    </Pressable>
+        <View style={styles.lookMeta}>
+          <Text style={[styles.lookCaption, { color: colors.foreground }]} numberOfLines={2}>
+            {look.caption}
+          </Text>
+          <View style={styles.lookFooter}>
+            {look.items ? (
+              <View style={styles.lookSwatchRow}>
+                {look.items.slice(0, 4).map((it) => (
+                  <View
+                    key={it.id}
+                    style={[styles.lookSwatch, { backgroundColor: COLOR_SWATCHES[it.color], borderColor: colors.card }]}
+                  />
+                ))}
+              </View>
+            ) : (
+              <View style={styles.lookSwatchRow}>
+                {[look.placeholder!.tone, look.placeholder!.accent, "#1C1A18"].map((c, i) => (
+                  <View key={i} style={[styles.lookSwatch, { backgroundColor: c, borderColor: colors.card }]} />
+                ))}
+              </View>
+            )}
+            <View style={[styles.lookArrow, { backgroundColor: colors.accent }]}>
+              <Feather name="arrow-up-right" size={12} color={colors.accentForeground} />
+            </View>
+          </View>
+        </View>
+      </Pressable>
+    </Animated.View>
   );
 }
 
@@ -509,7 +584,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "flex-end",
     paddingHorizontal: 22,
-    marginBottom: 14,
+    marginBottom: 8,
   },
   styledTitle: {
     fontFamily: "Inter_700Bold",
@@ -517,18 +592,37 @@ const styles = StyleSheet.create({
     letterSpacing: -0.5,
     marginTop: 6,
   },
-  styledLink: {
-    fontFamily: "Inter_500Medium",
+  styledSub: {
+    fontFamily: "Inter_400Regular",
+    fontSize: 12.5,
+    marginTop: 6,
+    lineHeight: 17,
+  },
+  seeAllRow: {
+    paddingHorizontal: 22,
+    paddingTop: 4,
+    paddingBottom: 10,
+  },
+  seeAllBtn: {
+    alignSelf: "flex-start",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 999,
+    borderWidth: 1,
+  },
+  seeAllText: {
+    fontFamily: "Inter_600SemiBold",
     fontSize: 12,
     letterSpacing: 0.4,
-    paddingBottom: 4,
-    textDecorationLine: "underline",
-    textDecorationStyle: "dotted",
   },
   styledRow: {
     paddingHorizontal: 22,
     gap: 14,
-    paddingBottom: 6,
+    paddingBottom: 8,
+    paddingTop: 4,
   },
   sectionEyebrow: {
     fontFamily: "Inter_600SemiBold",
@@ -538,14 +632,18 @@ const styles = StyleSheet.create({
 
   // Look card
   lookCard: {
-    width: 222,
+    width: 230,
     borderRadius: 22,
     borderWidth: 1,
     overflow: "hidden",
+    shadowOpacity: 0.18,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 8,
   },
   lookImageWrap: {
     width: "100%",
-    height: 230,
+    height: 240,
     position: "relative",
   },
   lookCollage: {
@@ -554,8 +652,9 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   lookMain: {
-    flex: 1.5,
+    flex: 1.4,
     overflow: "hidden",
+    position: "relative",
   },
   lookSide: {
     flex: 1,
@@ -563,8 +662,31 @@ const styles = StyleSheet.create({
   lookSideCell: {
     flex: 1,
     overflow: "hidden",
+    position: "relative",
   },
   lookImg: { width: "100%", height: "100%" },
+  thumbLabel: {
+    position: "absolute",
+    bottom: 8,
+    left: 8,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 4,
+  },
+  thumbLabelSmall: {
+    position: "absolute",
+    bottom: 4,
+    left: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 3,
+  },
+  thumbLabelText: {
+    fontFamily: "Inter_600SemiBold",
+    fontSize: 8,
+    letterSpacing: 0.8,
+    color: "#fff",
+  },
   lookGradient: {
     position: "absolute",
     left: 0,

@@ -47,6 +47,10 @@ function AuthGate() {
         name="generate"
         options={{ presentation: "modal", animation: "slide_from_bottom" }}
       />
+      <Stack.Screen
+        name="outfit-preview"
+        options={{ presentation: "modal", animation: "slide_from_bottom" }}
+      />
     </Stack>
   );
 }
