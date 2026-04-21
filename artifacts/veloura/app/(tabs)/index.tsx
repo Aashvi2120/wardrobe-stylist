@@ -344,7 +344,7 @@ function StyledLookCard({ look, onPress }: { look: StyledLook; onPress: () => vo
         )}
         <LinearGradient colors={["transparent", "rgba(15,14,13,0.55)"]} style={styles.lookGradient} />
         <View style={styles.lookBadge}>
-          <Feather name="sparkles" size={10} color={colors.accent} />
+          <Feather name="star" size={10} color={colors.accent} />
           <Text style={[styles.lookBadgeText, { color: "#fff" }]}>{OCCASION_LABELS[look.occasion]}</Text>
         </View>
       </View>
