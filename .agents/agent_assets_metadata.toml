@@ -1,0 +1,20 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "RW3NapdDEB1-3CV0mft0T"
+uri = "file://artifacts/veloura/assets/images/icon.png"
+type = "image"
+title = "veloura icon"
+
+[[generated]]
+id = "Bx2IlOZX_6XseS3RvzVFd"
+uri = "file://artifacts/veloura/assets/images/wardrobe-hero.png"
+type = "image"
+title = "wardrobe hero"
+
+[[generated]]
+id = "uiDBtf8wx4qD2uIYQIaWI"
+uri = "file://artifacts/veloura/assets/images/onboarding-hero.png"
+type = "image"
+title = "onboarding hero"
