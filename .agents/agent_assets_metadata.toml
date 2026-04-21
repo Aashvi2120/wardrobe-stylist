@@ -18,3 +18,33 @@ id = "uiDBtf8wx4qD2uIYQIaWI"
 uri = "file://artifacts/veloura/assets/images/onboarding-hero.png"
 type = "image"
 title = "onboarding hero"
+
+[[generated]]
+id = "Vbagrrp5I1Bv_qlRDY9_n"
+uri = "file://artifacts/veloura/assets/images/insp-brunch.png"
+type = "image"
+title = "Brunch Chic"
+
+[[generated]]
+id = "gQHnRGyykYid8P91oVLP0"
+uri = "file://artifacts/veloura/assets/images/insp-boardroom.png"
+type = "image"
+title = "Boardroom Power"
+
+[[generated]]
+id = "ob1YWSyjTDU5Yt1N5n-KZ"
+uri = "file://artifacts/veloura/assets/images/insp-gallery.png"
+type = "image"
+title = "Gallery Opening"
+
+[[generated]]
+id = "p6_3l03RrtSgM0pseTF5h"
+uri = "file://artifacts/veloura/assets/images/insp-wanderer.png"
+type = "image"
+title = "City Wanderer"
+
+[[generated]]
+id = "jAG6XOU6LPCneHyzyxixh"
+uri = "file://artifacts/veloura/assets/images/insp-garden.png"
+type = "image"
+title = "Garden Party"

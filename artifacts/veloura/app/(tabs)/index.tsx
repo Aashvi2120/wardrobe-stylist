@@ -24,6 +24,7 @@ import { Header } from "@/components/Header";
 import { ItemCard } from "@/components/ItemCard";
 import { useVeloura } from "@/contexts/VelouraContext";
 import { useColors } from "@/hooks/useColors";
+import { INSPIRATIONS, type Inspiration } from "@/lib/inspirations";
 import { generateOutfits } from "@/lib/outfitGenerator";
 import {
   CATEGORY_LABELS,
@@ -65,24 +66,9 @@ interface StyledLook {
 }
 
 const PLACEHOLDER_LOOKS: StyledLook[] = [
-  {
-    id: "p1",
-    caption: "Camel coat over ivory knit",
-    occasion: "business",
-    placeholder: { tone: "#E5D6BE", accent: "#B8956A" },
-  },
-  {
-    id: "p2",
-    caption: "Silk slip with gold accents",
-    occasion: "evening",
-    placeholder: { tone: "#1C1A18", accent: "#D4B186" },
-  },
-  {
-    id: "p3",
-    caption: "Linen ease in soft cream",
-    occasion: "casual",
-    placeholder: { tone: "#F1E7D6", accent: "#A18763" },
-  },
+  { id: "p1", caption: "Camel coat over ivory knit", occasion: "business", placeholder: { tone: "#E5D6BE", accent: "#B8956A" } },
+  { id: "p2", caption: "Silk slip with gold accents", occasion: "evening", placeholder: { tone: "#1C1A18", accent: "#D4B186" } },
+  { id: "p3", caption: "Linen ease in soft cream", occasion: "casual", placeholder: { tone: "#F1E7D6", accent: "#A18763" } },
 ];
 
 export default function WardrobeScreen() {
@@ -153,8 +139,17 @@ export default function WardrobeScreen() {
     });
   };
 
-  const headerComponent = (
+  const openInspiration = (inspo: Inspiration) => {
+    if (Platform.OS !== "web") Haptics.selectionAsync();
+    router.push({ pathname: "/inspiration", params: { id: inspo.id } });
+  };
+
+  const headerSections = (
     <View>
+      <InspirationsSection
+        onPress={openInspiration}
+        onSeeAll={() => router.push({ pathname: "/inspiration", params: { id: INSPIRATIONS[0]!.id } })}
+      />
       <StyledForYouSection looks={styledLooks} onPressLook={openLook} onSeeAll={() => router.push("/generate")} />
       <View style={styles.filterHeader}>
         <Text style={[styles.sectionEyebrow, { color: colors.accent }]}>YOUR ATELIER</Text>
@@ -198,6 +193,10 @@ export default function WardrobeScreen() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: tabBarPad + 20 }}
         >
+          <InspirationsSection
+            onPress={openInspiration}
+            onSeeAll={() => router.push({ pathname: "/inspiration", params: { id: INSPIRATIONS[0]!.id } })}
+          />
           <StyledForYouSection looks={styledLooks} onPressLook={openLook} onSeeAll={() => router.push("/generate")} />
           <PremiumEmptyState onCta={() => router.push("/add-item")} />
         </ScrollView>
@@ -206,7 +205,7 @@ export default function WardrobeScreen() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: tabBarPad + 20 }}
         >
-          {headerComponent}
+          {headerSections}
           <View style={{ paddingTop: 40 }}>
             <EmptyState
               icon="filter"
@@ -224,7 +223,7 @@ export default function WardrobeScreen() {
           numColumns={2}
           columnWrapperStyle={{ gap: gridGap, paddingHorizontal: horizontalPadding }}
           contentContainerStyle={{ gap: gridGap, paddingBottom: tabBarPad + 20 }}
-          ListHeaderComponent={headerComponent}
+          ListHeaderComponent={headerSections}
           renderItem={({ item, index }) => (
             <FadeIn delay={index * 60}>
               <ItemCard
@@ -286,6 +285,118 @@ function FilterTab({ label, selected, onPress }: { label: string; selected: bool
   );
 }
 
+function InspirationsSection({
+  onPress,
+  onSeeAll,
+}: {
+  onPress: (i: Inspiration) => void;
+  onSeeAll: () => void;
+}) {
+  const colors = useColors();
+  return (
+    <FadeIn>
+      <View style={styles.styledWrap}>
+        <View style={styles.styledHeader}>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.sectionEyebrow, { color: colors.accent }]}>DAILY STYLE FEED</Text>
+            <Text style={[styles.styledTitle, { color: colors.foreground }]}>
+              Style Inspirations <Text style={{ color: colors.accent }}>✨</Text>
+            </Text>
+            <Text style={[styles.styledSub, { color: colors.mutedForeground }]}>
+              Five looks Veloura is loving right now — no wardrobe needed.
+            </Text>
+          </View>
+        </View>
+        <View style={styles.seeAllRow}>
+          <Pressable
+            onPress={onSeeAll}
+            style={({ pressed }) => [
+              styles.seeAllBtn,
+              { borderColor: colors.accent, backgroundColor: colors.card, opacity: pressed ? 0.8 : 1 },
+            ]}
+          >
+            <Text style={[styles.seeAllText, { color: colors.foreground }]}>Browse all</Text>
+            <Feather name="arrow-right" size={14} color={colors.accent} />
+          </Pressable>
+        </View>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.styledRow}
+          decelerationRate="fast"
+          snapToInterval={258}
+        >
+          {INSPIRATIONS.map((inspo, i) => (
+            <FadeIn key={inspo.id} delay={140 + i * 90}>
+              <InspirationCard inspo={inspo} onPress={() => onPress(inspo)} />
+            </FadeIn>
+          ))}
+        </ScrollView>
+      </View>
+    </FadeIn>
+  );
+}
+
+function InspirationCard({ inspo, onPress }: { inspo: Inspiration; onPress: () => void }) {
+  const colors = useColors();
+  const scale = useRef(new Animated.Value(1)).current;
+  const onPressIn = () =>
+    Animated.spring(scale, { toValue: 0.965, friction: 6, tension: 140, useNativeDriver: true }).start();
+  const onPressOut = () =>
+    Animated.spring(scale, { toValue: 1, friction: 5, tension: 140, useNativeDriver: true }).start();
+
+  return (
+    <Animated.View style={{ transform: [{ scale }] }}>
+      <Pressable
+        onPress={onPress}
+        onPressIn={onPressIn}
+        onPressOut={onPressOut}
+        style={[
+          styles.inspoCard,
+          { backgroundColor: colors.card, borderColor: colors.border, shadowColor: "#1C1A18" },
+        ]}
+      >
+        <View style={styles.inspoImageWrap}>
+          <Image source={inspo.hero} style={StyleSheet.absoluteFill} contentFit="cover" />
+          <LinearGradient
+            colors={["transparent", "rgba(15,14,13,0.75)"]}
+            style={styles.inspoGradient}
+          />
+          <View style={styles.lookBadge}>
+            <Feather name="star" size={10} color={colors.accent} />
+            <Text style={[styles.lookBadgeText, { color: "#fff" }]}>{OCCASION_LABELS[inspo.occasion]}</Text>
+          </View>
+          <View style={styles.inspoFoot}>
+            <Text style={styles.inspoName}>{inspo.name}</Text>
+            <Text style={styles.inspoCaption} numberOfLines={1}>
+              {inspo.caption}
+            </Text>
+          </View>
+        </View>
+        <View style={styles.inspoMeta}>
+          <View style={{ flex: 1, gap: 6 }}>
+            {inspo.pieces.slice(0, 3).map((p, i) => (
+              <View key={i} style={styles.inspoPieceRow}>
+                <View style={[styles.inspoPieceDot, { backgroundColor: p.color, borderColor: colors.border }]} />
+                <Text style={[styles.inspoPieceLabel, { color: colors.mutedForeground }]} numberOfLines={1}>
+                  <Text style={{ color: colors.foreground, fontFamily: "Inter_600SemiBold" }}>
+                    {CATEGORY_LABELS[p.category]}
+                  </Text>
+                  {"  ·  "}
+                  {p.name}
+                </Text>
+              </View>
+            ))}
+          </View>
+          <View style={[styles.lookArrow, { backgroundColor: colors.accent }]}>
+            <Feather name="arrow-up-right" size={12} color={colors.accentForeground} />
+          </View>
+        </View>
+      </Pressable>
+    </Animated.View>
+  );
+}
+
 function StyledForYouSection({
   looks,
   onPressLook,
@@ -343,13 +454,11 @@ function StyledForYouSection({
 function StyledLookCard({ look, onPress }: { look: StyledLook; onPress: () => void }) {
   const colors = useColors();
   const scale = useRef(new Animated.Value(1)).current;
-
   const onPressIn = () =>
     Animated.spring(scale, { toValue: 0.965, friction: 6, tension: 140, useNativeDriver: true }).start();
   const onPressOut = () =>
     Animated.spring(scale, { toValue: 1, friction: 5, tension: 140, useNativeDriver: true }).start();
 
-  // Map items by category for explicit top/bottom/shoes layout.
   const byCat = useMemo(() => {
     const m = new Map<Category, WardrobeItem>();
     look.items?.forEach((it) => {
@@ -376,11 +485,7 @@ function StyledLookCard({ look, onPress }: { look: StyledLook; onPress: () => vo
         onPressOut={onPressOut}
         style={[
           styles.lookCard,
-          {
-            backgroundColor: colors.card,
-            borderColor: colors.border,
-            shadowColor: "#1C1A18",
-          },
+          { backgroundColor: colors.card, borderColor: colors.border, shadowColor: "#1C1A18" },
         ]}
       >
         <View style={styles.lookImageWrap}>
@@ -575,7 +680,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
 
-  // Curated section
+  // Section wrappers
   styledWrap: {
     paddingTop: 6,
     paddingBottom: 10,
@@ -630,7 +735,73 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
   },
 
-  // Look card
+  // Inspiration card
+  inspoCard: {
+    width: 244,
+    borderRadius: 22,
+    borderWidth: 1,
+    overflow: "hidden",
+    shadowOpacity: 0.18,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 8,
+  },
+  inspoImageWrap: {
+    width: "100%",
+    height: 300,
+    position: "relative",
+  },
+  inspoGradient: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: "60%",
+  },
+  inspoFoot: {
+    position: "absolute",
+    left: 14,
+    right: 14,
+    bottom: 14,
+  },
+  inspoName: {
+    fontFamily: "Inter_700Bold",
+    fontSize: 19,
+    color: "#fff",
+    letterSpacing: -0.4,
+  },
+  inspoCaption: {
+    fontFamily: "Inter_400Regular",
+    fontSize: 11,
+    color: "rgba(255,255,255,0.85)",
+    marginTop: 2,
+  },
+  inspoMeta: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+  },
+  inspoPieceRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  inspoPieceDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    borderWidth: 1,
+  },
+  inspoPieceLabel: {
+    flex: 1,
+    fontFamily: "Inter_400Regular",
+    fontSize: 11,
+    lineHeight: 14,
+  },
+
+  // Look card (real wardrobe outfits)
   lookCard: {
     width: 230,
     borderRadius: 22,
