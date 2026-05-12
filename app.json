@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "0afc0a4f-ebdf-48cc-b4bf-6afeab62c9ac"
+      }
+    },
+    "android": {
+      "package": "com.veloura.app"
+    }
+  }
+}
