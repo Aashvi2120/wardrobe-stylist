@@ -2,6 +2,7 @@ import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
 import React, { useEffect, useMemo, useState } from "react";
+import { API_URL } from "@/lib/api";
 import {
   Dimensions,
   Platform,
@@ -25,6 +26,7 @@ import { OCCASION_LABELS, type Occasion, type Outfit } from "@/lib/types";
 const OCCASIONS: Occasion[] = ["casual", "business", "formal", "evening", "ethnic", "athleisure", "streetwear"];
 
 export default function Generate() {
+  console.log("Backend URL:", API_URL);
   const colors = useColors();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -36,9 +38,13 @@ export default function Generate() {
   const pool = useMemo(() => generateOutfits(items, occasion, 8), [items, occasion]);
 
   useEffect(() => {
-    setQueue(pool);
-    setIndex(0);
-  }, [pool]);
+  setQueue(pool);
+  setIndex(0);
+  fetch(`${API_URL}/api/healthz`)
+    .then((res) => res.json())
+    .then((data) => console.log("Backend Connected:", data))
+    .catch((err) => console.log("Backend Error:", err));
+}, [pool]);
 
   const itemMap = useMemo(() => new Map(items.map((i) => [i.id, i])), [items]);
   const current = queue[index];
